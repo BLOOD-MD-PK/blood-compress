@@ -1,5 +1,0 @@
-User-agent: *
-
-Allow: /
-
-Sitemap: https://blood-compress.vercel.app/sitemap.xml

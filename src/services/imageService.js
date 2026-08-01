@@ -1,125 +1,87 @@
-const sharp = require('sharp');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-
-const config = require('../config/config');
+const sharp = require("sharp");
 
 class ImageService {
   async processImage(file, options = {}) {
-    if (!file) {
-      throw new Error('Image file is required.');
-    }
+    const format = (options.format || "jpg").toLowerCase();
+    const quality = (options.quality || "high").toLowerCase();
 
-    const targetFormat = (
-      options.format ||
-      config.DEFAULT_OUTPUT_FORMAT
-    ).toLowerCase();
+    let image = sharp(file.buffer);
 
-    const qualityLevel = (
-      options.quality ||
-      'medium'
-    ).toLowerCase();
+    let qualityValue = 85;
 
-    if (
-      !['jpg', 'jpeg', 'png', 'webp'].includes(targetFormat)
-    ) {
-      throw new Error('Unsupported output format.');
-    }
-
-    const quality =
-      config.QUALITY_MAP[qualityLevel] ||
-      config.QUALITY_MAP.medium;
-
-    const uniqueId = crypto.randomBytes(12).toString('hex');
-
-    const extension =
-      targetFormat === 'jpeg'
-        ? 'jpg'
-        : targetFormat;
-
-    const outputFilename = `compressed_${uniqueId}.${extension}`;
-
-    const outputPath = path.join(
-      config.PATHS.OUTPUTS,
-      outputFilename
-    );
-
-    let pipeline = sharp(file.path).rotate();
-
-    switch (targetFormat) {
-      case 'png':
-        pipeline = pipeline.png({
-          quality,
-          compressionLevel:
-            qualityLevel === 'high'
-              ? 6
-              : qualityLevel === 'medium'
-              ? 8
-              : 9,
-          palette: true,
-        });
+    switch (quality) {
+      case "low":
+        qualityValue = 40;
         break;
-
-      case 'webp':
-        pipeline = pipeline.webp({
-          quality,
-          effort: 6,
-        });
+      case "medium":
+        qualityValue = 65;
         break;
-
+      case "high":
       default:
-        pipeline = pipeline.jpeg({
-          quality,
-          mozjpeg: true,
-          progressive: true,
-        });
+        qualityValue = 85;
+        break;
     }
 
-    await pipeline.toFile(outputPath);
+    let outputBuffer;
 
-    const originalStats = fs.statSync(file.path);
-    const outputStats = fs.statSync(outputPath);
+    switch (format) {
+      case "png":
+        outputBuffer = await image
+          .png({
+            quality: qualityValue,
+            compressionLevel: 9,
+          })
+          .toBuffer();
+        break;
 
-    const metadata = await sharp(outputPath).metadata();
+      case "webp":
+        outputBuffer = await image
+          .webp({
+            quality: qualityValue,
+          })
+          .toBuffer();
+        break;
 
-    const originalSize = originalStats.size;
-    const compressedSize = outputStats.size;
+      case "jpeg":
+      case "jpg":
+      default:
+        outputBuffer = await image
+          .jpeg({
+            quality: qualityValue,
+            mozjpeg: true,
+          })
+          .toBuffer();
+        break;
+    }
 
-    const savedBytes = Math.max(
-      0,
-      originalSize - compressedSize
-    );
-
-    const compressionRatio =
-      originalSize === 0
-        ? 0
-        : Number(
-            (
-              (savedBytes / originalSize) *
-              100
-            ).toFixed(1)
-          );
+    const metadata = await sharp(outputBuffer).metadata();
 
     return {
-      filename: outputFilename,
+      buffer: outputBuffer,
+      filename:
+        file.originalname.replace(/\.[^/.]+$/, "") + "." + format,
+      mimetype:
+        format === "png"
+          ? "image/png"
+          : format === "webp"
+          ? "image/webp"
+          : "image/jpeg",
 
-      downloadPath: `/api/v1/images/download/${outputFilename}`,
-
-      format: extension,
-
-      quality: qualityLevel,
+      stats: {
+        originalSize: file.size,
+        compressedSize: outputBuffer.length,
+        savedBytes: file.size - outputBuffer.length,
+        compressionRatio: Number(
+          (
+            ((file.size - outputBuffer.length) / file.size) *
+            100
+          ).toFixed(1)
+        ),
+      },
 
       dimensions: {
         width: metadata.width,
         height: metadata.height,
-      },
-
-      stats: {
-        originalSize,
-        compressedSize,
-        savedBytes,
-        compressionRatio,
       },
     };
   }

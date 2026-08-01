@@ -1392,3 +1392,36 @@ animation:fadeUp .45s ease;
 
 }
 
+/* =======================
+Ads
+======================= */
+
+.ad-container{
+
+margin:35px 0;
+
+padding:20px;
+
+background:var(--bg-card);
+
+border:1px solid var(--border-color);
+
+border-radius:14px;
+
+text-align:center;
+
+}
+
+.ad-label{
+
+font-size:.8rem;
+
+margin-bottom:12px;
+
+color:var(--text-muted);
+
+text-transform:uppercase;
+
+letter-spacing:.08em;
+
+}

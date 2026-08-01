@@ -1,90 +1,24 @@
-const sharp = require("sharp");
+const originalSize = originalStats.size;
+const compressedSize = compressedStats.size;
 
-class ImageService {
-  async processImage(file, options = {}) {
-    const format = (options.format || "jpg").toLowerCase();
-    const quality = (options.quality || "high").toLowerCase();
+// Agar compressed file badi ho to original hi use karo
+if (compressedSize >= originalSize) {
+  fs.copyFileSync(file.path, outputPath);
 
-    let image = sharp(file.buffer);
-
-    let qualityValue = 85;
-
-    switch (quality) {
-      case "low":
-        qualityValue = 40;
-        break;
-      case "medium":
-        qualityValue = 65;
-        break;
-      case "high":
-      default:
-        qualityValue = 85;
-        break;
-    }
-
-    let outputBuffer;
-
-    switch (format) {
-      case "png":
-        outputBuffer = await image
-          .png({
-            quality: qualityValue,
-            compressionLevel: 9,
-          })
-          .toBuffer();
-        break;
-
-      case "webp":
-        outputBuffer = await image
-          .webp({
-            quality: qualityValue,
-          })
-          .toBuffer();
-        break;
-
-      case "jpeg":
-      case "jpg":
-      default:
-        outputBuffer = await image
-          .jpeg({
-            quality: qualityValue,
-            mozjpeg: true,
-          })
-          .toBuffer();
-        break;
-    }
-
-    const metadata = await sharp(outputBuffer).metadata();
-
-    return {
-      buffer: outputBuffer,
-      filename:
-        file.originalname.replace(/\.[^/.]+$/, "") + "." + format,
-      mimetype:
-        format === "png"
-          ? "image/png"
-          : format === "webp"
-          ? "image/webp"
-          : "image/jpeg",
-
-      stats: {
-        originalSize: file.size,
-        compressedSize: outputBuffer.length,
-        savedBytes: file.size - outputBuffer.length,
-        compressionRatio: Number(
-          (
-            ((file.size - outputBuffer.length) / file.size) *
-            100
-          ).toFixed(1)
-        ),
-      },
-
-      dimensions: {
-        width: metadata.width,
-        height: metadata.height,
-      },
-    };
-  }
+  return {
+    filename: outputFilename,
+    downloadPath: `/api/v1/images/download/${outputFilename}`,
+    format: targetFormat,
+    quality: qualityLevel,
+    dimensions: {
+      width: metadata.width,
+      height: metadata.height,
+    },
+    stats: {
+      originalSize,
+      compressedSize: originalSize,
+      savedBytes: 0,
+      compressionRatio: 0,
+    },
+  };
 }
-
-module.exports = new ImageService();

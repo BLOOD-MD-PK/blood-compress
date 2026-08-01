@@ -1,89 +1,48 @@
-const path = require('path');
-const fs = require('fs');
-
-const imageService = require('../services/imageService');
-const fileHelper = require('../utils/fileHelper');
-const config = require('../config/config');
+const imageService = require("../services/imageService");
 
 class ImageController {
   /**
-   * Compress / Convert Image
+   * Compress & Convert Image
    */
   async compressImage(req, res, next) {
     try {
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          error: 'No image uploaded.',
+          error: "No image uploaded.",
         });
       }
 
-      const {
+      const { format, quality } = req.body;
+
+      const result = await imageService.processImage(req.file, {
         format,
         quality,
-      } = req.body;
-
-      const result = await imageService.processImage(
-        req.file,
-        {
-          format,
-          quality,
-        }
-      );
-
-      // Delete uploaded temporary file
-      fileHelper.removeFile(req.file.path);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Image processed successfully.',
-        data: result,
       });
 
-    } catch (error) {
+      // Browser ko direct file download karwa do
+      res.set({
+        "Content-Type": result.mimetype,
+        "Content-Disposition": `attachment; filename="${result.filename}"`,
+        "Content-Length": result.buffer.length,
+        "Cache-Control": "no-store",
+      });
 
-      if (req.file?.path) {
-        fileHelper.removeFile(req.file.path);
-      }
-
-      next(error);
+      return res.send(result.buffer);
+    } catch (err) {
+      next(err);
     }
   }
 
   /**
-   * Download Processed Image
+   * Download Route (Memory Version)
    */
-  async downloadImage(req, res, next) {
-    try {
-
-      const filename = path.basename(req.params.filename);
-
-      const filePath = path.join(
-        config.PATHS.OUTPUTS,
-        filename
-      );
-
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).json({
-          success: false,
-          error: 'File not found or expired.',
-        });
-      }
-
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${filename}"`
-      );
-
-      return res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error(err);
-        }
-      });
-
-    } catch (error) {
-      next(error);
-    }
+  async downloadImage(req, res) {
+    return res.status(410).json({
+      success: false,
+      error:
+        "Direct download route is no longer available. Download starts immediately after compression.",
+    });
   }
 }
 

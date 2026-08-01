@@ -2,83 +2,81 @@
  * BloodCompress Client Application Engine
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-  // ===============================
+  // ===========================
   // UI Elements
-  // ===============================
+  // ===========================
 
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const browseBtn = document.getElementById('browseBtn');
+  const dropZone = document.getElementById("dropZone");
+  const fileInput = document.getElementById("fileInput");
+  const browseBtn = document.getElementById("browseBtn");
 
-  fileInput.setAttribute('autocomplete', 'off');
+  const processingSection = document.getElementById("processingSection");
+  const resultSection = document.getElementById("resultSection");
 
-  const processingSection = document.getElementById('processingSection');
-  const resultSection = document.getElementById('resultSection');
+  const imagePreview = document.getElementById("imagePreview");
+  const fileNameDisplay = document.getElementById("fileNameDisplay");
+  const fileSizeDisplay = document.getElementById("fileSizeDisplay");
 
-  const imagePreview = document.getElementById('imagePreview');
-  const fileNameDisplay = document.getElementById('fileNameDisplay');
-  const fileSizeDisplay = document.getElementById('fileSizeDisplay');
+  const compressBtn = document.getElementById("compressBtn");
+  const btnText = compressBtn.querySelector(".btn-text");
+  const btnLoader = compressBtn.querySelector(".btn-loader");
 
-  const compressBtn = document.getElementById('compressBtn');
-  const btnText = compressBtn.querySelector('.btn-text');
-  const btnLoader = compressBtn.querySelector('.btn-loader');
+  const changeFileBtn = document.getElementById("changeFileBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const downloadLink = document.getElementById("downloadLink");
 
-  const changeFileBtn = document.getElementById('changeFileBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const downloadLink = document.getElementById('downloadLink');
+  const errorAlert = document.getElementById("errorAlert");
+  const errorMessage = document.getElementById("errorMessage");
 
-  const errorAlert = document.getElementById('errorAlert');
-  const errorMessage = document.getElementById('errorMessage');
+  const resOrigSize = document.getElementById("resOrigSize");
+  const resCompSize = document.getElementById("resCompSize");
+  const resRatio = document.getElementById("resRatio");
 
-  const resOrigSize = document.getElementById('resOrigSize');
-  const resCompSize = document.getElementById('resCompSize');
-  const resRatio = document.getElementById('resRatio');
-
-  // ===============================
+  // ===========================
   // App State
-  // ===============================
+  // ===========================
 
   let currentFile = null;
-  let selectedFormat = 'jpg';
-  let selectedQuality = 'high';
+  let selectedFormat = "jpg";
+  let selectedQuality = "high";
 
-  // ===============================
-  // Format Buttons
-  // ===============================
+  fileInput.setAttribute("autocomplete", "off");
 
-  const formatBtns = document.querySelectorAll('.format-btn');
+  // ===========================
+  // Format Selection
+  // ===========================
+
+  const formatBtns = document.querySelectorAll(".format-btn");
 
   formatBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
 
-    btn.addEventListener('click', () => {
+      formatBtns.forEach((b) => b.classList.remove("active"));
 
-      formatBtns.forEach((b) => b.classList.remove('active'));
-
-      btn.classList.add('active');
+      btn.classList.add("active");
 
       selectedFormat = btn.dataset.format;
 
     });
-
   });
 
-  // ===============================
-  // Quality Cards
-  // ===============================
+  // ===========================
+  // Quality Selection
+  // ===========================
 
-  const qualityCards = document.querySelectorAll('.quality-card');
+  const qualityCards = document.querySelectorAll(".quality-card");
 
   qualityCards.forEach((card) => {
 
-    card.addEventListener('click', () => {
+    card.addEventListener("click", () => {
 
-      qualityCards.forEach((c) => c.classList.remove('active'));
+      qualityCards.forEach((c) => c.classList.remove("active"));
 
-      card.classList.add('active');
+      card.classList.add("active");
 
-      const radio = card.querySelector('input');
+      const radio = card.querySelector("input");
 
       radio.checked = true;
 
@@ -88,41 +86,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   });
 
-  // ===============================
+  // ===========================
   // Drag Events
-  // ===============================
+  // ===========================
 
-  ['dragenter', 'dragover'].forEach((eventName) => {
+  ["dragenter", "dragover"].forEach((eventName) => {
 
     dropZone.addEventListener(eventName, (e) => {
 
       e.preventDefault();
-      e.stopPropagation();
 
-      dropZone.classList.add('dragover');
+      dropZone.classList.add("dragover");
 
     });
 
   });
 
-  ['dragleave', 'drop'].forEach((eventName) => {
+  ["dragleave", "drop"].forEach((eventName) => {
 
     dropZone.addEventListener(eventName, (e) => {
 
       e.preventDefault();
-      e.stopPropagation();
 
-      dropZone.classList.remove('dragover');
+      dropZone.classList.remove("dragover");
 
     });
 
   });
 
-  dropZone.addEventListener('drop', (e) => {
+  dropZone.addEventListener("drop", (e) => {
 
     const files = e.dataTransfer.files;
 
-    if (files.length > 0) {
+    if (files.length) {
 
       handleSelectedFile(files[0]);
 
@@ -130,13 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   });
 
-  // ===============================
-  // File Picker
-  // ===============================
+  dropZone.addEventListener("click", () => {
 
-  dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.click();
 
-  browseBtn.addEventListener('click', (e) => {
+  });
+
+  browseBtn.addEventListener("click", (e) => {
 
     e.stopPropagation();
 
@@ -144,9 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   });
 
-  fileInput.addEventListener('change', (e) => {
+  fileInput.addEventListener("change", (e) => {
 
-    if (e.target.files.length > 0) {
+    if (e.target.files.length) {
 
       handleSelectedFile(e.target.files[0]);
 
@@ -154,28 +150,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   });
 
-  changeFileBtn.addEventListener('click', resetToUploadState);
+  changeFileBtn.addEventListener("click", resetToUploadState);
 
-  resetBtn.addEventListener('click', resetToUploadState);
+  resetBtn.addEventListener("click", resetToUploadState);
 
-  // ===============================
+  // ===========================
   // File Preview
-  // ===============================
+  // ===========================
 
   function handleSelectedFile(file) {
 
     hideError();
 
-    const validTypes = [
-      'image/png',
-      'image/jpeg',
-      'image/jpg',
-      'image/webp'
+    const allowed = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
     ];
 
-    if (!validTypes.includes(file.type)) {
+    if (!allowed.includes(file.type)) {
 
-      showError('Only PNG, JPG, JPEG and WEBP are supported.');
+      showError("Unsupported image format.");
 
       return;
 
@@ -183,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (file.size > 20 * 1024 * 1024) {
 
-      showError('Maximum allowed size is 20MB.');
+      showError("Maximum file size is 20MB.");
 
       return;
 
@@ -193,40 +189,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const reader = new FileReader();
 
-    reader.onload = (event) => {
+    reader.onload = (e) => {
 
-      imagePreview.src = event.target.result;
+      imagePreview.src = e.target.result;
 
       fileNameDisplay.textContent = file.name;
 
       fileSizeDisplay.textContent = formatBytes(file.size);
 
-      dropZone.classList.add('hidden');
+      dropZone.classList.add("hidden");
 
-      processingSection.classList.remove('hidden');
+      processingSection.classList.remove("hidden");
 
-      resultSection.classList.add('hidden');
+      resultSection.classList.add("hidden");
 
     };
 
     reader.readAsDataURL(file);
 
-  }
-    // ===============================
-  // Compress Image
-  // ===============================
-
-  compressBtn.addEventListener('click', async () => {
-
-    if (compressBtn.disabled) return;
-
-    if (!currentFile) {
-
-      showError('Please select an image first.');
-
-      return;
-
     }
+    // ===========================
+  // Compress Image
+  // ===========================
+
+  compressBtn.addEventListener("click", async () => {
+
+    if (!currentFile) return;
 
     hideError();
 
@@ -234,31 +222,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const formData = new FormData();
 
-    formData.append('image', currentFile);
-    formData.append('format', selectedFormat);
-    formData.append('quality', selectedQuality);
+    formData.append("image", currentFile);
+    formData.append("format", selectedFormat);
+    formData.append("quality", selectedQuality);
 
     try {
 
-      const response = await fetch('/api/v1/images/compress', {
-        method: 'POST',
+      const response = await fetch("/api/v1/images/compress", {
+        method: "POST",
         body: formData,
       });
 
-      const result = await response.json();
+      if (!response.ok) {
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to process image.');
+        let message = "Image processing failed.";
+
+        try {
+          const err = await response.json();
+          message = err.error || message;
+        } catch {}
+
+        throw new Error(message);
+
       }
 
-      displayResults(result.data);
+      const blob = await response.blob();
+
+      const downloadURL = URL.createObjectURL(blob);
+
+      let filename = "compressed-image";
+
+      const disposition = response.headers.get("Content-Disposition");
+
+      if (disposition) {
+
+        const match = disposition.match(/filename="(.+)"/);
+
+        if (match) filename = match[1];
+
+      }
+
+      resOrigSize.textContent = formatBytes(currentFile.size);
+      resCompSize.textContent = formatBytes(blob.size);
+
+      const ratio = (
+        ((currentFile.size - blob.size) / currentFile.size) *
+        100
+      ).toFixed(1);
+
+      resRatio.textContent =
+        ratio >= 0
+          ? `-${ratio}%`
+          : `+${Math.abs(ratio)}%`;
+
+      downloadLink.href = downloadURL;
+      downloadLink.download = filename;
+
+      processingSection.classList.add("hidden");
+      resultSection.classList.remove("hidden");
 
     } catch (err) {
 
-      showError(
-        err.message ||
-        'Unable to connect to server. Please try again.'
-      );
+      showError(err.message || "Something went wrong.");
 
     } finally {
 
@@ -268,74 +293,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   });
 
-  // ===============================
-  // Display Results
-  // ===============================
-
-  function displayResults(data) {
-
-    resOrigSize.textContent = formatBytes(data.stats.originalSize);
-
-    resCompSize.textContent = formatBytes(data.stats.compressedSize);
-
-    const ratio = data.stats.compressionRatio;
-
-    if (ratio >= 0) {
-
-      resRatio.textContent = `-${ratio}%`;
-
-      resRatio.parentElement.classList.add('success');
-
-    } else {
-
-      resRatio.textContent = `+${Math.abs(ratio)}%`;
-
-      resRatio.parentElement.classList.remove('success');
-
-    }
-
-    downloadLink.href = data.downloadPath;
-
-    downloadLink.setAttribute(
-      'download',
-      data.filename
-    );
-
-    processingSection.classList.add('hidden');
-
-    resultSection.classList.remove('hidden');
-
-  }
-
-  // ===============================
+  // ===========================
   // Reset
-  // ===============================
+  // ===========================
 
   function resetToUploadState() {
 
     currentFile = null;
 
-    fileInput.value = '';
+    fileInput.value = "";
 
-    imagePreview.src = '';
+    imagePreview.src = "";
 
-    downloadLink.removeAttribute('href');
-
-    downloadLink.removeAttribute('download');
+    downloadLink.removeAttribute("href");
+    downloadLink.removeAttribute("download");
 
     hideError();
 
-    processingSection.classList.add('hidden');
-
-    resultSection.classList.add('hidden');
-
-    dropZone.classList.remove('hidden');
+    resultSection.classList.add("hidden");
+    processingSection.classList.add("hidden");
+    dropZone.classList.remove("hidden");
 
   }
 
-  // ===============================
-  // Loading State
-  // ===============================
+  // ===========================
+  // Loading
+  // ===========================
 
   function setLoadingState(isLoading) {
 
@@ -343,55 +326,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isLoading) {
 
-      btnText.classList.add('hidden');
-
-      btnLoader.classList.remove('hidden');
+      btnText.classList.add("hidden");
+      btnLoader.classList.remove("hidden");
 
     } else {
 
-      btnText.classList.remove('hidden');
-
-      btnLoader.classList.add('hidden');
+      btnText.classList.remove("hidden");
+      btnLoader.classList.add("hidden");
 
     }
 
   }
 
-  // ===============================
-  // Error Handling
-  // ===============================
+  // ===========================
+  // Errors
+  // ===========================
 
   function showError(message) {
 
     errorMessage.textContent = message;
 
-    errorAlert.classList.remove('hidden');
+    errorAlert.classList.remove("hidden");
 
   }
 
   function hideError() {
 
-    errorAlert.classList.add('hidden');
+    errorAlert.classList.add("hidden");
 
   }
 
-  // ===============================
-  // Format Bytes
-  // ===============================
+  // ===========================
+  // Utils
+  // ===========================
 
   function formatBytes(bytes) {
 
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
 
     const k = 1024;
 
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = [
+      "Bytes",
+      "KB",
+      "MB",
+      "GB",
+    ];
 
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return (
-      parseFloat((bytes / Math.pow(k, i)).toFixed(2)) +
-      ' ' +
+      parseFloat(
+        (bytes / Math.pow(k, i)).toFixed(2)
+      ) +
+      " " +
       sizes[i]
     );
 
